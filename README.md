@@ -6,6 +6,7 @@
 Pré-requis :
 ---
 Docker
+Make
 
 Contexte :
 ---
@@ -22,9 +23,14 @@ Un nouveau partenaire - le site JobTeaser.com - nous propose également de redif
 Commandes utiles :
 ---
 
+Si vous n'avez pas installé la commande `make`
 - `./init.sh` pour initialiser et lancer le projet
 - `./run-import.sh` pour lancer l'import
 - `./clean.sh` pour arrêter et nettoyer le projet
+
+Si vous avez installé `make`
+- `make start` pour lancer le projet et faire les imports
+
 - http://localhost:8000/ (`root` / `root`): interface phpMyAdmin pour visualiser le contenu de la base de donnée
 
 A réaliser en 1h30 :

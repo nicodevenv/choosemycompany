@@ -2,45 +2,51 @@
 
 declare(strict_types=1);
 
-final class JobsImporter
+include_once(__DIR__ . '/config.php');
+
+class JobsImporter
 {
     private PDO $db;
 
-    private string $file;
-
-    public function __construct(string $host, string $username, string $password, string $databaseName, string $file)
+    public function __construct()
     {
-        $this->file = $file;
-        
-        /* connect to DB */
         try {
-            $this->db = new PDO('mysql:host=' . $host . ';dbname=' . $databaseName, $username, $password);
+            $this->db = new PDO('mysql:host=' . SQL_HOST . ';dbname=' . SQL_DB, SQL_USER, SQL_PWD);
         } catch (Exception $e) {
             die('DB error: ' . $e->getMessage() . "\n");
         }
     }
 
-    public function importJobs(): int
+    protected function openFile(string $filename)
     {
-        /* remove existing items */
-        $this->db->exec('DELETE FROM job');
-
-        /* parse XML file */
-        $xml = simplexml_load_file($this->file);
-
-        /* import each item */
-        $count = 0;
-        foreach ($xml->item as $item) {
-            $this->db->exec('INSERT INTO job (reference, title, description, url, company_name, publication) VALUES ('
-                . '\'' . addslashes((string) $item->ref) . '\', '
-                . '\'' . addslashes((string) $item->title) . '\', '
-                . '\'' . addslashes((string) $item->description) . '\', '
-                . '\'' . addslashes((string) $item->url) . '\', '
-                . '\'' . addslashes((string) $item->company) . '\', '
-                . '\'' . addslashes((string) $item->pubDate) . '\')'
-            );
-            $count++;
+        $fileExtension = pathinfo($filename, PATHINFO_EXTENSION);
+        switch ($fileExtension) {
+            case 'xml':
+                return simplexml_load_file($filename);
+            case 'json':
+                return json_decode(file_get_contents($filename));
         }
-        return $count;
+
+        throw new Exception('Unknown file extension');
+    }
+
+    /**
+     * @param Job[] $jobs
+     */
+    protected function import(string $partnerName, array $jobs)
+    {
+        $this->db->exec('DELETE FROM job WHERE partner = "'.$partnerName.'"');
+
+        $insertJobSql = array_map(fn(Job $job) => '(
+            \''.addslashes($partnerName).'\',
+            \''.addslashes($job->reference).'\',
+            \''.addslashes($job->title).'\',
+            \''.addslashes($job->description).'\',
+            \''.addslashes($job->url).'\',
+            \''.addslashes($job->company).'\',
+            \''.addslashes($job->publication).'\'
+        )', $jobs);
+
+        $this->db->exec('INSERT INTO job (partner, reference, title, description, url, company_name, publication) VALUES '.implode(',', $insertJobSql));
     }
 }

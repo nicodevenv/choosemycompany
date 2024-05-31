@@ -3,6 +3,7 @@ USE `cmc_db`;
 
 CREATE TABLE `job` (
     `id` int NOT NULL auto_increment,
+    `partner` varchar(255),
     `reference` varchar(255),
     `title` varchar(255),
     `description` TEXT,
